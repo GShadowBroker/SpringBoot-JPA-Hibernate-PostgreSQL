@@ -48,18 +48,31 @@ public class StudentService {
     @Transactional
     public Student update(UUID id, Student newStudent) {
 
-        return repository.findById(id).map(student -> {
+        Student updatedStudent = getStudentById(id);
 
-            student.setName(newStudent.getName());
-            student.setDob(newStudent.getDob());
-            student.setEmail(newStudent.getEmail());
+        if (!updatedStudent.getName().equals(newStudent.getName())) {
+            updatedStudent.setName(newStudent.getName());
+        }
 
-            return repository.save(student);
+        if (!updatedStudent.getDob().equals(newStudent.getDob())) {
+            updatedStudent.setDob(newStudent.getDob());
+        }
 
-        }).orElseThrow(() -> {
+        if (!updatedStudent.getEmail().equals(newStudent.getEmail())) {
+            updatedStudent.setEmail(newStudent.getEmail());
+        }
+
+        return repository.save(updatedStudent);
+    }
+
+    private Student getStudentById(UUID id) {
+        Optional<Student> optionalStudent = repository.findById(id);
+
+        if (optionalStudent.isEmpty()) {
             throw new StudentNotFoundException("Student not found");
-        });
+        }
 
+        return optionalStudent.get();
     }
 
     private Optional<Student> getByEmail(String email) {
