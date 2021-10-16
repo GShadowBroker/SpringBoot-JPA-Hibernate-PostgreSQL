@@ -14,6 +14,9 @@ public class StudentService {
     @Autowired
     private StudentRepository repository;
 
+    private static final String EMAIL_TAKEN = "Email '%s' already taken";
+    private static final String STUDENT_NOT_FOUND = "Student '%s' not found";
+
     public List<Student> getAll() {
         return repository.findAll();
     }
@@ -23,7 +26,7 @@ public class StudentService {
         Optional<Student> studentOptional = getByEmail(student.getEmail());
 
         if (studentOptional.isPresent()) {
-            throw new StudentNotFoundException("Email already taken");
+            throw new StudentNotFoundException(String.format(EMAIL_TAKEN, student.getEmail()));
         }
 
         return repository.save(student);
@@ -32,14 +35,14 @@ public class StudentService {
     public Student getById(UUID id) {
 
         return repository.findById(id).orElseThrow(() -> {
-            throw new StudentNotFoundException("Student not found");
+            throw new StudentNotFoundException(String.format(STUDENT_NOT_FOUND, id));
         });
     }
 
     public void deleteById(UUID id) {
 
         if (!repository.existsById(id)) {
-            throw new StudentNotFoundException("Student not found");
+            throw new StudentNotFoundException(String.format(STUDENT_NOT_FOUND, id));
         }
 
         repository.deleteById(id);
@@ -69,7 +72,7 @@ public class StudentService {
         Optional<Student> optionalStudent = repository.findById(id);
 
         if (optionalStudent.isEmpty()) {
-            throw new StudentNotFoundException("Student not found");
+            throw new StudentNotFoundException(String.format(STUDENT_NOT_FOUND, id));
         }
 
         return optionalStudent.get();

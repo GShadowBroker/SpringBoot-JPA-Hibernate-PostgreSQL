@@ -18,6 +18,7 @@ import static org.assertj.core.api.AssertionsForClassTypes.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 
 @ExtendWith(MockitoExtension.class)
@@ -83,7 +84,7 @@ class StudentServiceTest {
         // then
         assertThatThrownBy(() -> underTest.create(testStudent))
                 .isInstanceOf(StudentNotFoundException.class)
-                .hasMessageContaining("Email already taken");
+                .hasMessageContaining(String.format("Email '%s' already taken", testStudent.getEmail()));
     }
 
     @Test
@@ -125,7 +126,7 @@ class StudentServiceTest {
         // then
         assertThatThrownBy(() -> underTest.getById(testStudent.getId()))
                 .isInstanceOf(StudentNotFoundException.class)
-                .hasMessageContaining("Student not found");
+                .hasMessageContaining(String.format("Student '%s' not found", testStudent.getId()));
     }
 
     @Test
@@ -164,7 +165,7 @@ class StudentServiceTest {
         // then
         assertThatThrownBy(() -> underTest.deleteById(testStudent.getId()))
                 .isInstanceOf(StudentNotFoundException.class)
-                .hasMessageContaining("Student not found");
+                .hasMessageContaining(String.format("Student '%s' not found", testStudent.getId()));
     }
 
     @Test
@@ -219,6 +220,8 @@ class StudentServiceTest {
         // then
         assertThatThrownBy(() -> underTest.update(testStudent.getId(), toBeUpdated))
                 .isInstanceOf(StudentNotFoundException.class)
-                .hasMessageContaining("Student not found");
+                .hasMessageContaining(String.format("Student '%s' not found", testStudent.getId()));
+
+        verify(repository, never()).save(any());
     }
 }
