@@ -5,15 +5,21 @@ import com.example.demo.app_user.app_user_role.RoleRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.User;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
+import java.util.Collection;
 import java.util.List;
 
 @Service
 @Transactional
-public class AppUserServiceImpl implements AppUserService {
+public class AppUserServiceImpl implements AppUserService, UserDetailsService {
 
     Logger log = LoggerFactory.getLogger(AppUserServiceImpl.class);
 
@@ -25,6 +31,19 @@ public class AppUserServiceImpl implements AppUserService {
 
     private static final String EMAIL_NOT_FOUND_MESSAGE = "Email '%s' not found";
     private static final String ROLE_NOT_FOUND_MESSAGE = "Role '%s' not found";
+
+    @Override
+    public UserDetails loadUserByUsername(String email) throws UsernameNotFoundException {
+        AppUser user = getUserByEmail(email);
+
+        Collection<SimpleGrantedAuthority> authorities = new ArrayList<>();
+
+        for (Role role : user.getRoles()) {
+            authorities.add(new SimpleGrantedAuthority(role.getName()));
+        }
+
+        return new User(user.getEmail(), user.getPassword(), authorities);
+    }
 
     @Override
     public AppUser saveUser(AppUser user) {
