@@ -11,9 +11,13 @@ import org.springframework.security.config.http.SessionCreationPolicy;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.filter.CorsFilter;
+
+import static org.springframework.http.HttpMethod.GET;
+import static org.springframework.http.HttpMethod.POST;
 
 @EnableWebSecurity
 public class SecurityConfig extends WebSecurityConfigurerAdapter {
@@ -24,6 +28,9 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    @Autowired
+    private CustomAuthorizationFilter customAuthorizationFilter;
+
     @Override
     protected void configure(AuthenticationManagerBuilder auth) throws Exception {
         auth.userDetailsService(userDetailsService).passwordEncoder(passwordEncoder);
@@ -31,13 +38,29 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
 
     @Override
     protected void configure(HttpSecurity http) throws Exception {
+
+        CustomAuthenticationFilter customAuthenticationFilter = new CustomAuthenticationFilter(
+                authenticationManagerBean()
+        );
+        customAuthenticationFilter.setFilterProcessesUrl("/api/v1/login");
+
+        // disable csrf, enable cors, make session management stateless
         http.csrf().disable();
         http.cors();
         http.sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS);
-        http.authorizeRequests().anyRequest().permitAll();
-        http.addFilter(
-                new CustomAuthenticationFilter(authenticationManagerBean())
-        );
+
+        // authorization
+        http.authorizeRequests().antMatchers("/api/v1/login/**").permitAll();
+        http.authorizeRequests().antMatchers(POST, "/api/v1/user", "api/v1/user/refresh_token").permitAll();
+        http.authorizeRequests().antMatchers(GET, "/api/v1/student").hasAuthority("ROLE_USER");
+//        http.authorizeRequests().antMatchers(POST, "/api/v1/user/grant_role").hasAuthority("ROLE_ADMIN");
+//        http.authorizeRequests().antMatchers(POST, "/api/v1/user/role").hasAuthority("ROLE_SUPER_ADMIN");
+//        http.authorizeRequests().antMatchers(GET, "/api/v1/**").hasAuthority("ROLE_SUPER_ADMIN");
+        http.authorizeRequests().anyRequest().authenticated();
+
+        // add filters
+        http.addFilter(customAuthenticationFilter);
+        http.addFilterBefore(customAuthorizationFilter, UsernamePasswordAuthenticationFilter.class);
     }
 
     @Bean
